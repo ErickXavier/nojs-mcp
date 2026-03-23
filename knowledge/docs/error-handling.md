@@ -33,11 +33,13 @@
     // Send to error tracking service
   });
 
-  NoJS.on('fetch:error', (url, error) => {
-    if (error.status === 401) {
+  NoJS.on('fetch:error', (data) => {
+    if (data.error.status === 401) {
       NoJS.store.auth.user = null;
       NoJS.router.push('/login');
     }
+    // data.url — the request URL
+    // data.error — the error object
   });
 </script>
 ```

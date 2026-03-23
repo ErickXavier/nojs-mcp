@@ -50,9 +50,9 @@ Bind any DOM event directly in HTML:
 <!-- .throttle — throttle the handler -->
 <div on:scroll.throttle.100="handleScroll()">
 
-<!-- Key modifiers -->
+<!-- Key modifiers (predefined: enter, escape, tab, space, delete, backspace, up, down, left, right, ctrl, alt, shift, meta) -->
 <input on:keydown.enter="submit()"
-       on:keydown.ctrl.s="save()"
+       on:keydown.ctrl.enter="save()"
        on:keydown.shift.delete="deleteAll()" />
 
 <!-- Combine modifiers -->

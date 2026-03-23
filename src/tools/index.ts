@@ -115,10 +115,14 @@ export function registerTools(server: McpServer): void {
                 "stop",
                 "once",
                 "self",
+                "debounce",
+                "throttle",
                 "enter",
                 "escape",
                 "tab",
                 "space",
+                "delete",
+                "backspace",
                 "up",
                 "down",
                 "left",
@@ -353,7 +357,7 @@ export function registerTools(server: McpServer): void {
       <span show="expanded">▾</span>
     </button>
   </div>
-  <div class="card-body" show="expanded" animate="slideDown">
+  <div class="card-body" show="expanded" animate="fadeInDown">
     <p bind="description"></p>
   </div>
 </div>`,
@@ -362,7 +366,7 @@ export function registerTools(server: McpServer): void {
   <button on:click="open = true">Open Modal</button>
   <div class="modal-overlay" show="open" on:click.self="open = false"
        animate-enter="fadeIn" animate-leave="fadeOut">
-    <div class="modal-content" animate-enter="slideUp" animate-leave="slideDown">
+    <div class="modal-content" animate-enter="fadeInUp" animate-leave="fadeOutDown">
       <div class="modal-header">
         <h2>Modal Title</h2>
         <button on:click="open = false">&times;</button>

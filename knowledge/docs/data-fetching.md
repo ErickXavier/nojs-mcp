@@ -78,6 +78,8 @@ Absolute URLs skip base resolution:
 | `debounce` | `number` | Debounce in ms (useful with reactive URLs) |
 | `headers` | `string` | JSON string of additional headers |
 | `params` | `string` | Expression that resolves to query params object |
+| `retry` | `number` | Override global retry count for this request |
+| `retry-delay` | `number` | Override global retry delay in ms (default: 1000) |
 
 ### Full Example
 
@@ -183,6 +185,8 @@ Used on forms or triggered via `call`.
 | `then` | Expression to execute on success (e.g. `"users.push(result)"`) |
 | `into` | Write response to a named global store |
 | `cached` | Cache responses (memory/local/session) |
+| `retry` | Override global retry count for this request |
+| `retry-delay` | Override global retry delay in ms (default: 1000) |
 
 ### Request Lifecycle
 

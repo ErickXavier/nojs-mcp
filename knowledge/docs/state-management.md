@@ -159,6 +159,14 @@ Persist state across page reloads:
      persist-key="cart">
   ...
 </div>
+
+<!-- Persist only specific fields -->
+<div state="{ theme: 'dark', sidebar: true, tempData: null }"
+     persist="localStorage"
+     persist-key="app-settings"
+     persist-fields="theme, sidebar">
+  <!-- Only theme and sidebar are persisted; tempData is not -->
+</div>
 ```
 
 ---

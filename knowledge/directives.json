@@ -176,6 +176,18 @@
             "syntax": "<element get=\"/search?q={query}\" debounce=\"300\">"
         },
         {
+            "name": "retry",
+            "category": "data",
+            "description": "Override global retry count for this request",
+            "syntax": "<element get=\"/data\" retry=\"3\">"
+        },
+        {
+            "name": "retry-delay",
+            "category": "data",
+            "description": "Override global retry delay in ms (default: 1000)",
+            "syntax": "<element get=\"/data\" retry=\"3\" retry-delay=\"2000\">"
+        },
+        {
             "name": "state",
             "category": "state",
             "description": "Create local reactive state on an element",
@@ -216,6 +228,18 @@
             "category": "state",
             "description": "Persist state to localStorage or sessionStorage",
             "syntax": "<element state=\"{...}\" persist=\"localStorage\">"
+        },
+        {
+            "name": "persist-key",
+            "category": "state",
+            "description": "Custom localStorage/sessionStorage key for persisted state",
+            "syntax": "<element state=\"{...}\" persist=\"localStorage\" persist-key=\"app-settings\">"
+        },
+        {
+            "name": "persist-fields",
+            "category": "state",
+            "description": "Comma-separated list of state fields to persist selectively",
+            "syntax": "<element state=\"{...}\" persist=\"localStorage\" persist-fields=\"theme, sidebar\">"
         },
         {
             "name": "model",

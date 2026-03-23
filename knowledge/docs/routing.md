@@ -104,6 +104,7 @@ Full client-side routing with no page reloads.
 ```html
 <button on:click="$router.push('/users/42')">Go to User</button>
 <button on:click="$router.back()">Go Back</button>
+<button on:click="$router.forward()">Go Forward</button>
 <button on:click="$router.replace('/new-path')">Replace</button>
 ```
 

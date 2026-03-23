@@ -19,6 +19,8 @@ Complete reference of every No.JS directive.
 | `cached` | `cached` or `cached="local"` | Cache responses (memory/local/session) |
 | `into` | `into="currentUser"` | Write response to a named global store |
 | `debounce` | `debounce="300"` | Debounce reactive URL refetches (ms) |
+| `retry` | `retry="3"` | Override global retry count for this request |
+| `retry-delay` | `retry-delay="2000"` | Override global retry delay in ms |
 
 ## State
 
@@ -29,6 +31,7 @@ Complete reference of every No.JS directive.
 | `computed` | `computed="total" expr="a+b"` | Derived reactive value |
 | `watch` | `watch="search"` | React to value changes |
 | `persist` | `persist="localStorage"` | Persist state to storage |
+| `persist-fields` | `persist-fields="theme, lang"` | Persist only specific state fields |
 | `model` | `model="name"` | Two-way binding for inputs |
 
 ## Rendering
@@ -71,7 +74,9 @@ Complete reference of every No.JS directive.
 | `on:submit` | `on:submit.prevent="..."` | Submit handler |
 | `on:input` | `on:input="..."` | Input handler |
 | `on:keydown.*` | `on:keydown.enter="..."` | Key handler |
-| `on:mounted` | `on:mounted="init()"` | Lifecycle: mounted |
+| `on:init` | `on:init="setup()"` | Lifecycle: immediate (sync) |
+| `on:mounted` | `on:mounted="init()"` | Lifecycle: mounted (next frame) |
+| `on:updated` | `on:updated="refresh()"` | Lifecycle: DOM changed |
 | `on:unmounted` | `on:unmounted="cleanup()"` | Lifecycle: unmounted |
 
 ## Styling

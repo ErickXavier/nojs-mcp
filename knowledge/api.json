@@ -84,7 +84,7 @@
         "router": {
             "description": "Access the router instance",
             "syntax": "NoJS.router",
-            "notes": "Provides navigate(), back(), forward(), etc."
+            "notes": "Provides push(), replace(), back(), forward(). push() and replace() return Promises."
         },
         "locale": {
             "description": "Get or set the current locale",

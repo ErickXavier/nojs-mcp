@@ -11,9 +11,11 @@ Filters transform values in `bind` expressions using the `|` pipe syntax.
 <span bind="name | lowercase"></span>           <!-- john -->
 <span bind="name | capitalize"></span>          <!-- John doe → John Doe -->
 <span bind="text | truncate:100"></span>        <!-- First 100 chars + ... -->
+<span bind="text | trim"></span>                <!-- Trim whitespace -->
 <span bind="text | stripHtml"></span>           <!-- Remove HTML tags -->
 <span bind="slug | slugify"></span>             <!-- hello-world -->
 <span bind="text | nl2br"></span>               <!-- Newlines to <br> -->
+<span bind="value | encodeUri"></span>          <!-- URL-encode string -->
 ```
 
 ### Numbers
@@ -37,12 +39,14 @@ Filters transform values in `bind` expressions using the `|` pipe syntax.
 <span bind="items | unique"></span>             <!-- Deduplicated -->
 <span bind="items | pluck:'name'"></span>       <!-- Extract property -->
 <span bind="items | sortBy:'date'"></span>      <!-- Sort by property -->
+<span bind="items | where:'active':true"></span> <!-- Filter by property value -->
 ```
 
 ### Date
 
 ```html
 <span bind="date | date:'short'"></span>        <!-- 02/25/26 -->
+<span bind="date | datetime"></span>            <!-- Full date + time -->
 <span bind="date | relative"></span>            <!-- 3 days ago -->
 <span bind="date | fromNow"></span>             <!-- in 2 hours -->
 ```
@@ -52,6 +56,8 @@ Filters transform values in `bind` expressions using the `|` pipe syntax.
 ```html
 <span bind="value | default:'N/A'"></span>      <!-- Fallback for null/undefined -->
 <span bind="obj | json"></span>                 <!-- JSON.stringify -->
+<span bind="obj | keys"></span>                 <!-- Object keys as array -->
+<span bind="obj | values"></span>               <!-- Object values as array -->
 <span bind="items | debug"></span>              <!-- console.log + passthrough -->
 ```
 
