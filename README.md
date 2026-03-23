@@ -110,7 +110,7 @@ node dist/index.js
 
 ## Versioning
 
-This package version always matches the No.JS framework version. Current: **1.9.1**
+This package version always matches the No.JS framework version. Current: **1.10.0**
 
 ## Links
 

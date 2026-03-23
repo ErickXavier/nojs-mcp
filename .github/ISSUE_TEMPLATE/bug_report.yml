@@ -1,0 +1,88 @@
+name: Bug Report
+description: Report a bug in the NoJS MCP server
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the sections below so we can reproduce and fix it.
+
+  - type: input
+    id: version
+    attributes:
+      label: MCP Server Version
+      description: "Check your package.json or run `npx @erickxavier/nojs-mcp --version`."
+      placeholder: "e.g., 1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Bug Category
+      description: Which area is affected?
+      options:
+        - validate_template tool
+        - explain_directive tool
+        - scaffold_component tool
+        - get_docs tool
+        - Knowledge accuracy (wrong data)
+        - Server startup / connection
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP Client
+      options:
+        - VS Code (Copilot)
+        - Claude Desktop
+        - Cursor
+        - Claude Code CLI
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        How can we reproduce this? Include the tool call input if applicable.
+      placeholder: |
+        1. Call `validate_template` with this HTML:
+        ```html
+        <div get="/users">...</div>
+        ```
+        2. Expected: ...
+        3. Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Logs, screenshots, or anything else that helps.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues and this hasn't been reported yet
+          required: true

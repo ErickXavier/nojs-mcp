@@ -1,5 +1,5 @@
 {
-    "version": "1.9.1",
+    "version": "1.10.0",
     "name": "No.JS",
     "tagline": "The HTML-First Reactive Framework",
     "description": "Build dynamic, reactive web applications using nothing but HTML attributes. No build step. No virtual DOM. No transpiler. No JSX. Just HTML.",
@@ -97,7 +97,7 @@
         "version": {
             "description": "Current NoJS version",
             "syntax": "NoJS.version",
-            "value": "1.9.1"
+            "value": "1.10.0"
         }
     },
     "utilities": {
