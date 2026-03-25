@@ -70,6 +70,11 @@
             "id": "misc",
             "name": "Miscellaneous",
             "description": "Utility directives"
+        },
+        {
+            "id": "head",
+            "name": "Head Management",
+            "description": "Directives that update <head> elements reactively from the page body"
         }
     ],
     "directives": [
@@ -88,12 +93,16 @@
         {
             "name": "get",
             "category": "data",
-            "description": "Fetch data via HTTP GET request",
+            "description": "Fetch data via HTTP GET request. Companion attributes: as, loading, error, empty, success, refresh, cached, into, debounce, headers, params, skeleton (CLS-prevention placeholder element id), retry, retry-delay. Static URLs automatically get a preload hint injected.",
             "syntax": "<element get=\"/endpoint\" as=\"dataVar\">",
             "examples": [
                 {
                     "html": "<div get=\"/users\" as=\"users\">\n  <div each=\"user in users\">\n    <h2 bind=\"user.name\"></h2>\n  </div>\n</div>",
                     "description": "Fetch and display a list of users"
+                },
+                {
+                    "html": "<div id=\"skeleton\" class=\"skeleton-card\"><div class=\"skeleton-line\"></div></div>\n<div get=\"/api/product/1\" as=\"product\" skeleton=\"skeleton\">\n  <h1 bind=\"product.name\"></h1>\n</div>",
+                    "description": "Fetch with CLS-preventing skeleton placeholder"
                 }
             ]
         },
@@ -496,7 +505,7 @@
         {
             "name": "route",
             "category": "routing",
-            "description": "Define a route or create a navigation link",
+            "description": "Define a route or create a navigation link. On <template route>, companion attributes page-title, page-description, page-canonical, page-jsonld update <head> on each navigation. Expressions can use $route and $store.",
             "syntax": "<a route=\"/path\"> or <template route=\"/path\">",
             "examples": [
                 {
@@ -506,8 +515,13 @@
                 {
                     "html": "<template route=\"/users/:id\">\n  <div get=\"/users/{$route.params.id}\" as=\"user\">\n    <h1 bind=\"user.name\"></h1>\n  </div>\n</template>",
                     "description": "Route with params"
+                },
+                {
+                    "html": "<template route=\"/products/:id\"\n          page-title=\"'Product ' + $route.params.id + ' | Store'\"\n          page-description=\"'View product detail'\"\n          page-canonical=\"'/products/' + $route.params.id\"\n          page-jsonld='{\"@type\":\"Product\",\"name\":\"{$route.params.id}\"}'>",
+                    "description": "Route with full head management"
                 }
-            ]
+            ],
+            "notes": "Route head attributes (page-title, page-description, page-canonical, page-jsonld) are evaluated once per navigation. Use single-quoted strings for literals. $store changes after navigation do not trigger re-evaluation."
         },
         {
             "name": "route-view",
@@ -756,6 +770,60 @@
             "category": "misc",
             "description": "Error boundary — renders fallback template on error",
             "syntax": "<element error-boundary=\"#fallback\">"
+        },
+        {
+            "name": "page-title",
+            "category": "head",
+            "description": "Updates document.title reactively. Place on <div hidden> in the body. For SPA routing use page-title on <template route> instead.",
+            "syntax": "<div hidden page-title=\"expression\"></div>",
+            "examples": [
+                {
+                    "html": "<div hidden page-title=\"product.name + ' | My Store'\"></div>",
+                    "description": "Dynamic document title from state"
+                },
+                {
+                    "html": "<div hidden page-title=\"'About Us | My Store'\"></div>",
+                    "description": "Static document title"
+                }
+            ],
+            "notes": "Value is a No.JS expression — use single-quoted strings. Priority 20. Reactive via _watchExpr."
+        },
+        {
+            "name": "page-description",
+            "category": "head",
+            "description": "Creates or updates <meta name=\"description\" content=\"...\"> in <head>. Place on <div hidden>. Reactive.",
+            "syntax": "<div hidden page-description=\"expression\"></div>",
+            "examples": [
+                {
+                    "html": "<div hidden page-description=\"product.description\"></div>",
+                    "description": "Set meta description from product state"
+                }
+            ]
+        },
+        {
+            "name": "page-canonical",
+            "category": "head",
+            "description": "Creates or updates <link rel=\"canonical\" href=\"...\"> in <head>. Place on <div hidden>. Reactive.",
+            "syntax": "<div hidden page-canonical=\"expression\"></div>",
+            "examples": [
+                {
+                    "html": "<div hidden page-canonical=\"'/products/' + product.slug\"></div>",
+                    "description": "Set canonical URL from product slug"
+                }
+            ]
+        },
+        {
+            "name": "page-jsonld",
+            "category": "head",
+            "description": "Creates or updates <script type=\"application/ld+json\" data-nojs> in <head>. Write JSON-LD template as element body with {placeholder} expressions. Place on <div hidden>. Reactive.",
+            "syntax": "<div hidden page-jsonld>{ JSON-LD template }</div>",
+            "examples": [
+                {
+                    "html": "<div hidden page-jsonld>\n  {\n    \"@context\": \"https://schema.org\",\n    \"@type\": \"Product\",\n    \"name\": \"{product.name}\",\n    \"offers\": { \"@type\": \"Offer\", \"price\": \"{product.price}\" }\n  }\n</div>",
+                    "description": "Structured data for a product page"
+                }
+            ],
+            "notes": "JSON-LD template captured once at init. {placeholder} expressions re-evaluated reactively. Structural JSON braces are not interpreted as placeholders."
         }
     ]
 }
