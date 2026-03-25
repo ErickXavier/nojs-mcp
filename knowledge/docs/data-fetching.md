@@ -80,6 +80,7 @@ Absolute URLs skip base resolution:
 | `params` | `string` | Expression that resolves to query params object |
 | `retry` | `number` | Override global retry count for this request |
 | `retry-delay` | `number` | Override global retry delay in ms (default: 1000) |
+| `skeleton` | `string` | ID (without `#`) of an existing DOM element to hide while loading and restore after response. Use for CLS prevention. Element must start **visible** in HTML — No.JS controls visibility via inline `display` style. |
 
 ### Full Example
 
@@ -197,6 +198,65 @@ Used on forms or triggered via `call`.
                     exec `then`  log to console
                     `redirect`
 ```
+
+---
+
+## Skeleton Placeholders (`skeleton=`)
+
+The `skeleton=` attribute keeps a pre-rendered placeholder visible during a request, preventing Cumulative Layout Shift (CLS). Unlike `loading=` (which clones a template via JS), the skeleton already exists in the DOM.
+
+```html
+<!-- Skeleton starts visible (no display:none in CSS) -->
+<div id="product-skeleton" class="skeleton-card">
+  <div class="skeleton-line"></div>
+  <div class="skeleton-line short"></div>
+</div>
+
+<!-- skeleton= points to the element's id (without #) -->
+<div get="/api/products/42" as="product" skeleton="product-skeleton">
+  <h1 bind="product.name"></h1>
+  <p bind="product.description"></p>
+</div>
+```
+
+The skeleton is hidden when: response arrives (success), cached response used, empty response (before `empty=` template), or error (before `error=` template).
+
+**`skeleton=` vs `loading=`:**
+
+| | `skeleton=` | `loading=` |
+|---|---|---|
+| Content | Existing DOM element | Template cloned by JS |
+| CLS impact | None — space reserved | May cause layout shift |
+| SSG-friendly | Yes | No |
+
+---
+
+## Automatic Resource Hints
+
+No.JS automatically injects `<link>` resource hints for performance optimization:
+
+| Hint type | Trigger | Benefit |
+|---|---|---|
+| `preload` | Static `get=` URL (no `{interpolation}`) | Starts API request before JS renders the component |
+| `preconnect` | Cross-origin `get=` URL | Eliminates DNS + TLS round-trip for external APIs |
+| `prefetch` | `<template route src="...">` | Loads route templates in the background after first paint |
+
+All hints are **deduplicated** — no duplicate is added if the same URL already has a hint in `<head>`.
+
+Dynamic URLs containing `{interpolation}` are skipped (value not known at init time).
+
+**Build-time injection** (recommended for LCP — hints fire before JavaScript executes):
+
+```sh
+node scripts/inject-resource-hints.js "dist/**/*.html"
+```
+
+```json
+// package.json
+{ "scripts": { "build": "your-bundler && node scripts/inject-resource-hints.js" } }
+```
+
+**`crossorigin` note:** All auto-injected hints use `crossorigin="anonymous"`. For APIs that require cookies or an `Authorization` header, write the hint manually with `crossorigin="use-credentials"`.
 
 ---
 

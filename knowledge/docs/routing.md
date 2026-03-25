@@ -503,4 +503,121 @@ The failed HTTP response is **not** cached — subsequent navigations to other p
 
 ---
 
+## Hash Mode — SEO Warning
+
+When `useHash: true` is enabled, No.JS logs a console warning at startup:
+
+> `[No.JS] Router is running in hash mode (useHash: true). Hash URLs are not indexed by search engines. Use history mode + a server-side SPA fallback for SEO.`
+
+To silence the warning (e.g. on GitHub Pages where hash mode is intentional):
+
+```javascript
+NoJS.config({ router: { useHash: true, suppressHashWarning: true } });
+```
+
+### SPA Deployment — Server Fallback
+
+History mode requires the server to return `index.html` for all routes:
+
+```nginx
+# nginx
+location / { try_files $uri $uri/ /index.html; }
+```
+
+```apache
+# Apache .htaccess
+RewriteEngine On
+RewriteRule ^ index.html [L]
+```
+
+```
+# Netlify _redirects
+/*  /index.html  200
+```
+
+```json
+// Vercel vercel.json
+{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+```
+
+```json
+// Cloudflare Pages _redirects
+/*  /index.html  200
+```
+
+```json
+// Firebase Hosting firebase.json
+{
+  "hosting": {
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  }
+}
+```
+
+---
+
+## Accessibility — `focusBehavior`
+
+By default, SPA navigation does not move keyboard focus. Enable automatic focus management:
+
+```javascript
+NoJS.config({ router: { focusBehavior: 'auto' } });
+```
+
+When `'auto'`, after each route render No.JS moves focus to the first suitable target:
+
+1. `[autofocus]` — explicit developer opt-in
+2. `[tabindex="-1"]` — programmatic focus target
+3. `h1` — the page heading
+4. The outlet element itself (fallback)
+
+Default is `'none'` — no change to existing behavior.
+
+For screen readers without focus movement, add `aria-live="polite"` to the outlet:
+
+```html
+<div route-view aria-live="polite" aria-atomic="true"></div>
+```
+
+---
+
+## Route Head Attributes
+
+Set `<head>` metadata declaratively on each `<template route>`. Evaluated once per navigation. Expressions can use `$route` and `$store`.
+
+```html
+<!-- Static title -->
+<template route="/about" page-title="'About Us | My Store'">
+  <h1>About</h1>
+</template>
+
+<!-- Dynamic from route params -->
+<template route="/products/:id"
+          page-title="'Product ' + $route.params.id + ' | Store'"
+          page-description="'View product detail'"
+          page-canonical="'/products/' + $route.params.id"
+          page-jsonld='{"@type":"Product","name":"{$route.params.id}"}'>
+  <h1>Product</h1>
+</template>
+
+<!-- From global store -->
+<template route="/account" page-title="$store.user.name + ' — My Account'">
+  <h1>Account</h1>
+</template>
+```
+
+| Attribute | Description |
+|-----------|-------------|
+| `page-title` | Sets `document.title`. Value is a JS expression (single-quoted strings) |
+| `page-description` | Creates/updates `<meta name="description">` |
+| `page-canonical` | Creates/updates `<link rel="canonical">` |
+| `page-jsonld` | Creates/updates `<script type="application/ld+json" data-nojs>`. Supports `{placeholder}` interpolation. |
+
+**Notes:**
+- Evaluated **once per navigation**, not continuously — `$store` changes after navigation do not re-update the title
+- Default outlet only — secondary outlets do not affect head metadata
+- Use single quotes for string literals: `page-title="'My Title'"` ✅ (backticks are not valid in HTML attributes)
+
+---
+
 **Next:** [Animations →](animations.md)
