@@ -237,7 +237,7 @@ export function registerTools(server: McpServer): void {
                 .string()
                 .optional()
                 .describe(
-                    'Filter by category: data, state, binding, conditionals, loops, events, styling, forms, routing, animation, dnd, i18n, refs, misc'
+                    'Filter by category: data, state, binding, conditionals, loops, events, styling, forms, routing, animation, dnd (plugin), i18n, refs, misc'
                 ),
         },
         async ({ category }) => {
@@ -300,7 +300,7 @@ export function registerTools(server: McpServer): void {
                 .array(z.string())
                 .optional()
                 .describe(
-                    'Optional features to include: "validation", "i18n", "state", "fetch", "animation", "dnd"'
+                    'Optional features to include: "validation", "i18n", "state", "fetch", "animation", "dnd" (requires nojs-elements plugin)'
                 ),
         },
         async ({ type, features = [] }) => {
@@ -409,7 +409,7 @@ export function registerTools(server: McpServer): void {
             }
             if (features.includes("dnd")) {
                 featureNotes.push(
-                    "Add drag/drop attributes for drag-and-drop support"
+                    "Add drag/drop attributes for drag-and-drop support (requires @erickxavier/nojs-elements plugin: NoJS.use(NojsElements))"
                 );
             }
 

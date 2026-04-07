@@ -54,7 +54,7 @@
         {
             "id": "dnd",
             "name": "Drag and Drop",
-            "description": "Declarative drag-and-drop system"
+            "description": "Declarative drag-and-drop system (requires @erickxavier/nojs-elements plugin)"
         },
         {
             "id": "i18n",
