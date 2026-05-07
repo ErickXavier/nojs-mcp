@@ -1764,10 +1764,10 @@
     }
   },
   "metadata": {
-    "totalDirectives": 58,
-    "coreDirectives": 33,
-    "pluginDirectives": 25,
-    "patternDirectives": 4,
+    "totalDirectives": 75,
+    "coreDirectives": 41,
+    "pluginDirectives": 32,
+    "patternDirectives": 2,
     "lifecycleEvents": ["mounted", "init", "updated", "unmounted", "error"],
     "contextKeys": ["$watch", "$notify", "$set", "$parent", "$refs", "$store", "$route", "$router", "$i18n", "$form", "$el", "$event", "$error", "$rule"],
     "loopContextVars": ["$index", "$count", "$first", "$last", "$even", "$odd"],

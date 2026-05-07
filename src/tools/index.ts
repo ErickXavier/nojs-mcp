@@ -147,7 +147,7 @@ export function registerTools(server: McpServer): void {
             const foreachRegex = /foreach=/g;
             while ((match = foreachRegex.exec(html)) !== null) {
                 const elementTag = extractElementTag(html, match.index);
-                if (elementTag && !elementTag.includes("from=")) {
+                if (elementTag && !/\bfrom=/.test(elementTag)) {
                     errors.push({
                         message: `"foreach" directive requires a "from" attribute to specify the source array`,
                         severity: "error",
@@ -165,7 +165,7 @@ export function registerTools(server: McpServer): void {
                 const directive = match[1].toLowerCase();
                 // Extract the full element tag respecting quotes
                 const elementTag = extractElementTag(html, match.index);
-                if (elementTag && !elementTag.includes("as=")) {
+                if (elementTag && !/\bas=/.test(elementTag)) {
                     errors.push({
                         message: `Fetch directive "${directive}" missing "as" attribute to name the response data`,
                         severity: "error",
