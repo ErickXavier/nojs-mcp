@@ -71,6 +71,29 @@ export function registerResources(server: McpServer): void {
         }
     );
 
+    // ── Directive Schema (JSON Schema draft 2020-12) ──
+    server.resource(
+        "schema-directives",
+        "nojs://schema/directives",
+        {
+            description:
+                "JSON Schema (draft 2020-12) describing every NoJS directive for AI generation — includes types, companions, modifiers, examples",
+            mimeType: "application/json",
+        },
+        async () => {
+            const schema = loadJSON("directive-schema.json");
+            return {
+                contents: [
+                    {
+                        uri: "nojs://schema/directives",
+                        mimeType: "application/json" as const,
+                        text: JSON.stringify(schema, null, 2),
+                    },
+                ],
+            };
+        }
+    );
+
     // ── Filters reference ──
     server.resource(
         "ref-filters",

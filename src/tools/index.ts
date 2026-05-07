@@ -3,6 +3,64 @@ import { z } from "zod";
 import { loadJSON, loadDoc } from "../knowledge.js";
 import type { DirectivesKB, FiltersKB, ApiKB } from "../knowledge.js";
 
+// ── Structured validation error interface ──
+interface ValidationError {
+    message: string;
+    severity: "error" | "warning" | "info";
+    location?: {
+        line: number;
+        column: number;
+    };
+    fixSuggestion?: string;
+    code?: string;
+}
+
+// ── Helpers for location detection ──
+function offsetToLocation(
+    source: string,
+    offset: number
+): { line: number; column: number } {
+    const lines = source.slice(0, offset).split("\n");
+    return { line: lines.length, column: lines[lines.length - 1].length + 1 };
+}
+
+// ── Extract the full opening tag surrounding a given offset (respects quotes) ──
+function extractElementTag(html: string, offset: number): string | null {
+    // Scan backwards from offset to find the opening '<' (skip '<' inside quotes)
+    let start = -1;
+    let inQuote: string | null = null;
+    for (let i = offset; i >= 0; i--) {
+        const ch = html[i];
+        if (inQuote) {
+            if (ch === inQuote) inQuote = null;
+        } else {
+            if (ch === '"' || ch === "'") {
+                inQuote = ch;
+            } else if (ch === "<") {
+                start = i;
+                break;
+            }
+        }
+    }
+    if (start === -1) return null;
+
+    // Scan forward from start to find the real closing '>' (skip '>' inside quotes)
+    inQuote = null;
+    for (let i = start; i < html.length; i++) {
+        const ch = html[i];
+        if (inQuote) {
+            if (ch === inQuote) inQuote = null;
+        } else {
+            if (ch === '"' || ch === "'") {
+                inQuote = ch;
+            } else if (ch === ">") {
+                return html.slice(start, i + 1);
+            }
+        }
+    }
+    return null;
+}
+
 // ── Known NoJS directives for validation ──
 let _directiveNames: Set<string> | null = null;
 
@@ -23,17 +81,14 @@ export function registerTools(server: McpServer): void {
         "Validate a NoJS HTML template for syntax errors, unknown directives, and best practices",
         { html: z.string().describe("The HTML template to validate") },
         async ({ html }) => {
-            const errors: string[] = [];
-            const warnings: string[] = [];
+            const errors: ValidationError[] = [];
+            const warnings: ValidationError[] = [];
+            const info: ValidationError[] = [];
             const knownDirectives = getDirectiveNames();
 
-            // Extract all attributes from HTML
+            // Extract all attributes from HTML (with positions)
             const attrRegex = /\s([a-z][a-z0-9\-:]*?)(?:=|[\s>])/gi;
-            const attrs = new Set<string>();
             let match: RegExpExecArray | null;
-            while ((match = attrRegex.exec(html)) !== null) {
-                attrs.add(match[1].toLowerCase());
-            }
 
             // Check for potential NoJS directive typos
             const possibleTypos: Record<string, string> = {
@@ -60,11 +115,17 @@ export function registerTools(server: McpServer): void {
                 "on-input": "on:input",
             };
 
-            for (const attr of attrs) {
+            while ((match = attrRegex.exec(html)) !== null) {
+                const attr = match[1].toLowerCase();
                 if (possibleTypos[attr]) {
-                    errors.push(
-                        `Unknown attribute "${attr}" — did you mean "${possibleTypos[attr]}"?`
-                    );
+                    const correction = possibleTypos[attr];
+                    errors.push({
+                        message: `Unknown attribute "${attr}" — did you mean "${correction}"?`,
+                        severity: "error",
+                        location: offsetToLocation(html, match.index + 1),
+                        fixSuggestion: `Replace "${attr}" with "${correction}"`,
+                        code: "NOJS-V001",
+                    });
                 }
             }
 
@@ -72,43 +133,123 @@ export function registerTools(server: McpServer): void {
             const eachRegex = /each="([^"]+)"/g;
             while ((match = eachRegex.exec(html)) !== null) {
                 if (!match[1].includes(" in ")) {
-                    errors.push(
-                        `Invalid "each" syntax: "${match[1]}" — expected format: "item in items"`
-                    );
+                    errors.push({
+                        message: `Invalid "each" syntax: "${match[1]}" — expected format: "item in items"`,
+                        severity: "error",
+                        location: offsetToLocation(html, match.index),
+                        fixSuggestion: `Use each="item in ${match[1]}" (replace "item" with your iterator variable)`,
+                        code: "NOJS-V002",
+                    });
                 }
             }
 
             // Check foreach without from
-            if (html.includes("foreach=") && !html.includes("from=")) {
-                errors.push(
-                    `"foreach" directive requires a "from" attribute to specify the source array`
-                );
+            const foreachRegex = /foreach=/g;
+            while ((match = foreachRegex.exec(html)) !== null) {
+                const elementTag = extractElementTag(html, match.index);
+                if (elementTag && !elementTag.includes("from=")) {
+                    errors.push({
+                        message: `"foreach" directive requires a "from" attribute to specify the source array`,
+                        severity: "error",
+                        location: offsetToLocation(html, match.index),
+                        fixSuggestion: `Add from="arrayExpression" alongside foreach`,
+                        code: "NOJS-V003",
+                    });
+                }
+            }
+
+            // Check for fetch directives (get, post, put, delete) without "as"
+            const fetchRegex =
+                /\s(get|post|put|delete)="([^"]+)"/gi;
+            while ((match = fetchRegex.exec(html)) !== null) {
+                const directive = match[1].toLowerCase();
+                // Extract the full element tag respecting quotes
+                const elementTag = extractElementTag(html, match.index);
+                if (elementTag && !elementTag.includes("as=")) {
+                    errors.push({
+                        message: `Fetch directive "${directive}" missing "as" attribute to name the response data`,
+                        severity: "error",
+                        location: offsetToLocation(html, match.index + 1),
+                        fixSuggestion: `Add as="data" (or a descriptive name) to the element with ${directive}="${match[2]}"`,
+                        code: "NOJS-V004",
+                    });
+                }
+            }
+
+            // Check for if and show on the same element
+            const tagRegex = /<([a-z][a-z0-9]*)\s([^>]+)>/gi;
+            while ((match = tagRegex.exec(html)) !== null) {
+                const attrsStr = match[2];
+                const hasIf = /\bif=/.test(attrsStr);
+                const hasShow = /\bshow=/.test(attrsStr);
+                if (hasIf && hasShow) {
+                    errors.push({
+                        message: `Element <${match[1]}> has both "if" and "show" — these are redundant together`,
+                        severity: "error",
+                        location: offsetToLocation(html, match.index),
+                        fixSuggestion: `Remove "show" (if removes the element from DOM entirely; show only toggles visibility). Use "if" for conditional rendering or "show" for CSS-based toggle.`,
+                        code: "NOJS-V005",
+                    });
+                }
+            }
+
+            // Check for missing validate on form elements with validation attributes
+            const formRegex = /<form\s([^>]*)>/gi;
+            while ((match = formRegex.exec(html)) !== null) {
+                const formAttrs = match[1];
+                if (!formAttrs.includes("validate")) {
+                    // Check if any child inputs have validate attributes
+                    const formEnd = html.indexOf("</form>", match.index);
+                    if (formEnd > -1) {
+                        const formContent = html.slice(match.index, formEnd);
+                        if (/validate="[^"]+"/i.test(formContent)) {
+                            warnings.push({
+                                message: `<form> has validated inputs but is missing the "validate" attribute on the form element`,
+                                severity: "warning",
+                                location: offsetToLocation(html, match.index),
+                                fixSuggestion: `Add "validate" attribute to the <form> tag to enable form-level validation`,
+                                code: "NOJS-V006",
+                            });
+                        }
+                    }
+                }
             }
 
             // Check for deprecated syntax
-            if (html.includes('mode="hash"') || html.includes("mode=\"history\"")) {
-                warnings.push(
-                    `Deprecated: router "mode" option. Use "useHash: true" instead of "mode: 'hash'"`
-                );
+            const modeHashRegex = /mode="(hash|history)"/g;
+            while ((match = modeHashRegex.exec(html)) !== null) {
+                warnings.push({
+                    message: `Deprecated: router "mode" option. Use "useHash: true" instead of "mode: '${match[1]}'"`,
+                    severity: "warning",
+                    location: offsetToLocation(html, match.index),
+                    code: "NOJS-V007",
+                });
             }
 
             // Check model on non-input elements
             const modelOnDivRegex =
                 /<(div|span|p|h[1-6]|section|article|main|header|footer)\s[^>]*model=/gi;
             while ((match = modelOnDivRegex.exec(html)) !== null) {
-                warnings.push(
-                    `"model" directive on <${match[1]}> — "model" is designed for form inputs (<input>, <select>, <textarea>)`
-                );
+                warnings.push({
+                    message: `"model" directive on <${match[1]}> — "model" is designed for form inputs (<input>, <select>, <textarea>)`,
+                    severity: "warning",
+                    location: offsetToLocation(html, match.index),
+                    code: "NOJS-V008",
+                });
             }
 
             // Check bind-html without sanitization warning
-            if (html.includes("bind-html=")) {
-                warnings.push(
-                    `"bind-html" renders HTML (sanitized by default via the built-in DOMParser-based sanitizer). Review content sources to prevent XSS.`
-                );
+            const bindHtmlRegex = /bind-html=/g;
+            while ((match = bindHtmlRegex.exec(html)) !== null) {
+                info.push({
+                    message: `"bind-html" renders HTML (sanitized by default via the built-in DOMParser-based sanitizer). Review content sources to prevent XSS.`,
+                    severity: "info",
+                    location: offsetToLocation(html, match.index),
+                    code: "NOJS-V009",
+                });
             }
 
-            // Check for on: events without correct syntax
+            // Check for on: events with invalid modifiers
             const onRegex = /on:([a-z]+)\.([a-z.]+)/gi;
             const validModifiers = new Set([
                 "prevent",
@@ -136,27 +277,44 @@ export function registerTools(server: McpServer): void {
                 const mods = match[2].split(".");
                 for (const mod of mods) {
                     if (!validModifiers.has(mod)) {
-                        warnings.push(
-                            `Unknown event modifier ".${mod}" on "on:${match[1]}" — valid modifiers: ${[...validModifiers].join(", ")}`
-                        );
+                        warnings.push({
+                            message: `Unknown event modifier ".${mod}" on "on:${match[1]}"`,
+                            severity: "warning",
+                            location: offsetToLocation(html, match.index),
+                            fixSuggestion: `Valid modifiers: ${[...validModifiers].join(", ")}`,
+                            code: "NOJS-V010",
+                        });
                     }
                 }
             }
 
             const valid = errors.length === 0;
+            const fixable =
+                errors.filter((e) => e.fixSuggestion).length +
+                warnings.filter((w) => w.fixSuggestion).length;
 
             let summary = valid
-                ? "✅ Template is valid."
-                : `❌ Found ${errors.length} error(s).`;
+                ? "Template is valid."
+                : `Found ${errors.length} error(s).`;
             if (warnings.length > 0) {
                 summary += ` ${warnings.length} warning(s).`;
+            }
+            if (info.length > 0) {
+                summary += ` ${info.length} info notice(s).`;
+            }
+            if (fixable > 0) {
+                summary += ` ${fixable} issue(s) have fix suggestions.`;
             }
 
             return {
                 content: [
                     {
                         type: "text" as const,
-                        text: JSON.stringify({ valid, errors, warnings, summary }, null, 2),
+                        text: JSON.stringify(
+                            { valid, errors, warnings, info, summary, fixable },
+                            null,
+                            2
+                        ),
                     },
                 ],
             };
